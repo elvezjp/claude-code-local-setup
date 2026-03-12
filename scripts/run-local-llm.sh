@@ -81,6 +81,10 @@ ensure_python_deps() {
     echo "▶ Python 依存を確認します..."
     python3 -m pip install --user -q huggingface_hub hf_transfer 2>/dev/null \
         || python3 -m pip install -q huggingface_hub hf_transfer
+    if ! python3 -m huggingface_hub download --help >/dev/null 2>&1; then
+        echo "❌ huggingface_hub CLI の準備に失敗しました。"
+        exit 1
+    fi
     echo "  ✅ huggingface_hub / hf_transfer 準備完了"
 }
 
@@ -133,7 +137,7 @@ download_qwen() {
     echo "     保存先: unsloth/Qwen3.5-35B-A3B-GGUF"
     echo "     目安サイズ: 約22GB (UD-Q4_K_XL)"
     echo "     進捗: ターミナルにプログレスバーが表示されます"
-    hf download unsloth/Qwen3.5-35B-A3B-GGUF \
+    HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/Qwen3.5-35B-A3B-GGUF \
         --local-dir unsloth/Qwen3.5-35B-A3B-GGUF \
         --include "*UD-Q4_K_XL*"
     echo "  ✅ Qwen3.5-35B-A3B ダウンロード完了"
@@ -144,7 +148,7 @@ download_glm() {
     echo "     保存先: unsloth/GLM-4.7-Flash-GGUF"
     echo "     目安サイズ: 約10GB (UD-Q4_K_XL)"
     echo "     進捗: ターミナルにプログレスバーが表示されます"
-    HF_HUB_ENABLE_HF_TRANSFER=1 hf download unsloth/GLM-4.7-Flash-GGUF \
+    HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/GLM-4.7-Flash-GGUF \
         --local-dir unsloth/GLM-4.7-Flash-GGUF \
         --include "*UD-Q4_K_XL*"
     echo "  ✅ GLM-4.7-Flash ダウンロード完了"
