@@ -11,6 +11,72 @@ cd "${REPO_ROOT}"
 
 LLAMA_REPO_DIR="${REPO_ROOT}/llama.cpp"
 LLAMA_SERVER_BIN="${LLAMA_REPO_DIR}/llama-server"
+PORT="${LOCAL_LLM_PORT:-8001}"
+
+# =============================================================
+# 事前チェック
+# =============================================================
+
+preflight_check() {
+    echo "▶ 環境を確認します..."
+
+    # Apple Silicon チェック
+    local arch
+    arch="$(uname -m)"
+    if [ "${arch}" != "arm64" ]; then
+        echo "❌ Apple Silicon (arm64) が必要です（検出: ${arch}）"
+        echo "   このスクリプトは Apple Silicon Mac 専用です。"
+        exit 1
+    fi
+
+    # macOS チェック
+    if [ "$(uname -s)" != "Darwin" ]; then
+        echo "❌ macOS が必要です（検出: $(uname -s)）"
+        exit 1
+    fi
+
+    # メモリチェック
+    local mem_gb
+    mem_gb=$(sysctl -n hw.memsize 2>/dev/null | awk '{printf "%.0f", $1/1024/1024/1024}')
+    echo "  メモリ: ${mem_gb}GB"
+    if [ "${mem_gb}" -lt 16 ]; then
+        echo "❌ 16GB 以上のメモリが必要です（検出: ${mem_gb}GB）"
+        exit 1
+    fi
+
+    # 空きディスク容量チェック（モデルサイズの1.5倍 + ビルド用5GB）
+    local free_gb
+    free_gb=$(df -g "${REPO_ROOT}" | awk 'NR==2{print $4}')
+    echo "  空きディスク: ${free_gb}GB"
+    if [ "${free_gb}" -lt "${REQUIRED_DISK_GB}" ]; then
+        echo "❌ 空きディスク容量が不足しています（必要: ${REQUIRED_DISK_GB}GB, 空き: ${free_gb}GB）"
+        echo "   不要なファイルを削除してから再実行してください。"
+        exit 1
+    fi
+
+    # メモリがモデルサイズに対して十分かチェック
+    if [ "${mem_gb}" -lt "${RECOMMENDED_RAM_GB}" ]; then
+        echo "  ⚠️  推奨メモリ: ${RECOMMENDED_RAM_GB}GB 以上（現在: ${mem_gb}GB）"
+        echo "     メモリ不足で動作が遅くなる、または起動に失敗する可能性があります。"
+        read -rp "  続行しますか? [y/N]: " CONT
+        if [ "${CONT}" != "y" ] && [ "${CONT}" != "Y" ]; then
+            exit 0
+        fi
+    fi
+
+    # ポート使用チェック
+    if lsof -i :"${PORT}" >/dev/null 2>&1; then
+        echo "❌ ポート ${PORT} は既に使用されています。"
+        echo "   別のポートを指定するには: LOCAL_LLM_PORT=8002 $0 ${MODEL_CHOICE}"
+        exit 1
+    fi
+
+    echo "  ✅ 環境チェック完了"
+}
+
+# =============================================================
+# セットアップ関数
+# =============================================================
 
 ensure_homebrew() {
     echo "▶ Homebrew を確認します..."
@@ -51,6 +117,7 @@ ensure_python_runtime() {
 
     if ! python3 -m pip --version >/dev/null 2>&1; then
         echo "❌ Python/pip の準備に失敗しました。"
+        echo "   brew install python を試してください。"
         exit 1
     fi
     echo "  ✅ Python 3 / pip 準備完了"
@@ -83,6 +150,7 @@ ensure_python_deps() {
         || python3 -m pip install -q huggingface_hub hf_transfer
     if ! python3 -m huggingface_hub download --help >/dev/null 2>&1; then
         echo "❌ huggingface_hub CLI の準備に失敗しました。"
+        echo "   python3 -m pip install --user huggingface_hub hf_transfer を試してください。"
         exit 1
     fi
     echo "  ✅ huggingface_hub / hf_transfer 準備完了"
@@ -132,57 +200,37 @@ EOF
     echo "  ✅ settings.json 初期作成完了"
 }
 
-download_qwen() {
-    echo "  📥 Qwen3.5-35B-A3B をダウンロードします..."
-    echo "     保存先: unsloth/Qwen3.5-35B-A3B-GGUF"
-    echo "     目安サイズ: 約22GB (UD-Q4_K_XL)"
+# =============================================================
+# モデルダウンロード（汎用）
+# =============================================================
+
+download_model() {
+    local repo_id="$1"
+    local local_dir="$2"
+    local display_name="$3"
+    local size_info="$4"
+
+    echo "  📥 ${display_name} をダウンロードします..."
+    echo "     保存先: ${local_dir}"
+    echo "     目安サイズ: ${size_info}"
     echo "     進捗: ターミナルにプログレスバーが表示されます"
-    HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/Qwen3.5-35B-A3B-GGUF \
-        --local-dir unsloth/Qwen3.5-35B-A3B-GGUF \
+    HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download "${repo_id}" \
+        --local-dir "${local_dir}" \
         --include "*UD-Q4_K_XL*"
-    echo "  ✅ Qwen3.5-35B-A3B ダウンロード完了"
+    echo "  ✅ ${display_name} ダウンロード完了"
 }
 
-download_qwen27b() {
-    echo "  📥 Qwen3.5-27B をダウンロードします..."
-    echo "     保存先: unsloth/Qwen3.5-27B-GGUF"
-    echo "     目安サイズ: 約17.6GB (UD-Q4_K_XL)"
-    echo "     進捗: ターミナルにプログレスバーが表示されます"
-    HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/Qwen3.5-27B-GGUF \
-        --local-dir unsloth/Qwen3.5-27B-GGUF \
-        --include "*UD-Q4_K_XL*"
-    echo "  ✅ Qwen3.5-27B ダウンロード完了"
-}
-
-download_qwen122b() {
-    echo "  📥 Qwen3.5-122B-A10B をダウンロードします..."
-    echo "     保存先: unsloth/Qwen3.5-122B-A10B-GGUF"
-    echo "     目安サイズ: 約77GB (UD-Q4_K_XL, 3分割)"
-    echo "     進捗: ターミナルにプログレスバーが表示されます"
-    HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/Qwen3.5-122B-A10B-GGUF \
-        --local-dir unsloth/Qwen3.5-122B-A10B-GGUF \
-        --include "*UD-Q4_K_XL*"
-    echo "  ✅ Qwen3.5-122B-A10B ダウンロード完了"
-}
-
-download_glm() {
-    echo "  📥 GLM-4.7-Flash をダウンロードします..."
-    echo "     保存先: unsloth/GLM-4.7-Flash-GGUF"
-    echo "     目安サイズ: 約10GB (UD-Q4_K_XL)"
-    echo "     進捗: ターミナルにプログレスバーが表示されます"
-    HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/GLM-4.7-Flash-GGUF \
-        --local-dir unsloth/GLM-4.7-Flash-GGUF \
-        --include "*UD-Q4_K_XL*"
-    echo "  ✅ GLM-4.7-Flash ダウンロード完了"
-}
+# =============================================================
+# モデル選択
+# =============================================================
 
 MODEL_CHOICE="${1:-}"
 if [ -z "${MODEL_CHOICE}" ]; then
     echo "▶ 起動するモデルを選んでください"
-    echo "  1) qwen     (Qwen3.5-35B-A3B  — MoE, 軽量・高速)"
-    echo "  2) qwen27b  (Qwen3.5-27B     — Dense, 高精度)"
-    echo "  3) qwen122b (Qwen3.5-122B-A10B — MoE, 大規模・高精度, ~77GB)"
-    echo "  4) glm      (GLM-4.7-Flash   — 軽量・高速)"
+    echo "  1) qwen     (Qwen3.5-35B-A3B   — MoE,   ~22GB, RAM 24GB〜)"
+    echo "  2) qwen27b  (Qwen3.5-27B       — Dense,  ~18GB, RAM 24GB〜)"
+    echo "  3) qwen122b (Qwen3.5-122B-A10B — MoE,   ~77GB, RAM 96GB〜)"
+    echo "  4) glm      (GLM-4.7-Flash     —        ~10GB, RAM 16GB〜)"
     read -rp "番号を入力してください [1/2/3/4]: " NUM
 
     case "${NUM}" in
@@ -196,34 +244,59 @@ fi
 
 case "${MODEL_CHOICE}" in
     qwen)
-        MODEL_PATH="unsloth/Qwen3.5-35B-A3B-GGUF/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf"
+        MODEL_REPO="unsloth/Qwen3.5-35B-A3B-GGUF"
+        MODEL_DIR="unsloth/Qwen3.5-35B-A3B-GGUF"
+        MODEL_PATH="${MODEL_DIR}/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf"
         MODEL_ALIAS="unsloth/Qwen3.5-35B-A3B"
+        MODEL_DISPLAY="Qwen3.5-35B-A3B"
+        MODEL_SIZE_INFO="約22GB (UD-Q4_K_XL)"
         START_ARGS=(--temp 0.6 --top-p 0.95 --top-k 20 --min-p 0.00 --ctx-size 131072)
-        DOWNLOAD_FN=download_qwen
+        REQUIRED_DISK_GB=30
+        RECOMMENDED_RAM_GB=24
         ;;
     qwen27b)
-        MODEL_PATH="unsloth/Qwen3.5-27B-GGUF/Qwen3.5-27B-UD-Q4_K_XL.gguf"
+        MODEL_REPO="unsloth/Qwen3.5-27B-GGUF"
+        MODEL_DIR="unsloth/Qwen3.5-27B-GGUF"
+        MODEL_PATH="${MODEL_DIR}/Qwen3.5-27B-UD-Q4_K_XL.gguf"
         MODEL_ALIAS="unsloth/Qwen3.5-27B"
+        MODEL_DISPLAY="Qwen3.5-27B"
+        MODEL_SIZE_INFO="約17.6GB (UD-Q4_K_XL)"
         START_ARGS=(--temp 0.6 --top-p 0.95 --min-p 0.00 --ctx-size 131072)
-        DOWNLOAD_FN=download_qwen27b
+        REQUIRED_DISK_GB=25
+        RECOMMENDED_RAM_GB=24
         ;;
     qwen122b)
-        MODEL_PATH="unsloth/Qwen3.5-122B-A10B-GGUF/UD-Q4_K_XL/Qwen3.5-122B-A10B-UD-Q4_K_XL-00001-of-00003.gguf"
+        MODEL_REPO="unsloth/Qwen3.5-122B-A10B-GGUF"
+        MODEL_DIR="unsloth/Qwen3.5-122B-A10B-GGUF"
+        MODEL_PATH="${MODEL_DIR}/UD-Q4_K_XL/Qwen3.5-122B-A10B-UD-Q4_K_XL-00001-of-00003.gguf"
         MODEL_ALIAS="unsloth/Qwen3.5-122B-A10B"
-        START_ARGS=(--temp 0.6 --top-p 0.95 --top-k 20 --min-p 0.00 --ctx-size 131072)
-        DOWNLOAD_FN=download_qwen122b
+        MODEL_DISPLAY="Qwen3.5-122B-A10B"
+        MODEL_SIZE_INFO="約77GB (UD-Q4_K_XL, 3分割)"
+        START_ARGS=(--temp 0.6 --top-p 0.95 --top-k 20 --min-p 0.00 --ctx-size 32768)
+        REQUIRED_DISK_GB=90
+        RECOMMENDED_RAM_GB=96
         ;;
     glm)
-        MODEL_PATH="unsloth/GLM-4.7-Flash-GGUF/GLM-4.7-Flash-UD-Q4_K_XL.gguf"
+        MODEL_REPO="unsloth/GLM-4.7-Flash-GGUF"
+        MODEL_DIR="unsloth/GLM-4.7-Flash-GGUF"
+        MODEL_PATH="${MODEL_DIR}/GLM-4.7-Flash-UD-Q4_K_XL.gguf"
         MODEL_ALIAS="unsloth/GLM-4.7-Flash"
+        MODEL_DISPLAY="GLM-4.7-Flash"
+        MODEL_SIZE_INFO="約10GB (UD-Q4_K_XL)"
         START_ARGS=(--temp 1.0 --top-p 0.95 --min-p 0.01 --batch-size 4096 --ubatch-size 1024 --ctx-size 131072)
-        DOWNLOAD_FN=download_glm
+        REQUIRED_DISK_GB=15
+        RECOMMENDED_RAM_GB=16
         ;;
     *)
-        echo "❌ モデル指定は qwen / qwen27b / qwen122b / glm のみ対応です"
+        echo "❌ 対応モデル: qwen / qwen27b / qwen122b / glm"
+        echo "   使用例: $0 qwen"
         exit 1
         ;;
 esac
+
+# =============================================================
+# メイン処理
+# =============================================================
 
 echo "========================================"
 echo " Claude Code × ローカルLLM 起動"
@@ -231,6 +304,7 @@ echo " Tech千一夜"
 echo " https://www.youtube.com/@tech1018/"
 echo "========================================"
 
+preflight_check
 ensure_homebrew
 ensure_python_runtime
 ensure_llama_cpp
@@ -239,17 +313,17 @@ ensure_claude_code
 ensure_claude_settings
 
 if [ ! -f "${MODEL_PATH}" ]; then
-    echo "▶ モデルが未ダウンロードのため取得します: ${MODEL_PATH}"
-    "${DOWNLOAD_FN}"
+    echo "▶ モデルが未ダウンロードのため取得します"
+    download_model "${MODEL_REPO}" "${MODEL_DIR}" "${MODEL_DISPLAY}" "${MODEL_SIZE_INFO}"
 else
     echo "▶ モデルは既に存在します: ${MODEL_PATH}"
 fi
 
 echo ""
-echo "▶ ${MODEL_ALIAS} を起動します（ポート 8001）"
+echo "▶ ${MODEL_ALIAS} を起動します（ポート ${PORT}）"
 echo "  停止するには Ctrl+C"
 echo "  別ターミナルで Claude Code を使うときは以下を実行:"
-echo "    export ANTHROPIC_BASE_URL='http://localhost:8001'"
+echo "    export ANTHROPIC_BASE_URL='http://localhost:${PORT}'"
 echo "    export ANTHROPIC_API_KEY='sk-no-key-required'"
 echo "    claude --model ${MODEL_ALIAS}"
 echo ""
@@ -257,7 +331,7 @@ echo ""
 "${LLAMA_SERVER_BIN}" \
     --model "${MODEL_PATH}" \
     --alias "${MODEL_ALIAS}" \
-    --port 8001 \
+    --port "${PORT}" \
     --kv-unified \
     --cache-type-k q8_0 --cache-type-v q8_0 \
     --flash-attn on --fit on \

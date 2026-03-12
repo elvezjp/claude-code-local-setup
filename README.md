@@ -22,7 +22,14 @@
 
 - **Apple Silicon Mac** で llama.cpp を使いローカルLLMを動かす
 - **Claude Code** のバックエンドをローカルLLMに切り替える
-- **Qwen3.5-35B-A3B** / **Qwen3.5-27B** / **Qwen3.5-122B-A10B** / **GLM-4.7-Flash** で動作確認済み
+- 下記モデルで動作確認済み（スクリプトから選択可能）
+
+| モデル | タイプ | サイズ (Q4) | 推奨メモリ | 特徴 |
+|--------|--------|------------|-----------|------|
+| **Qwen3.5-35B-A3B** | MoE | ~22GB | 24GB〜 | 軽量で高速。コーディング性能◎ |
+| **Qwen3.5-27B** | Dense | ~18GB | 24GB〜 | Dense で高精度。汎用向き |
+| **Qwen3.5-122B-A10B** | MoE | ~77GB | 96GB〜 | 大規模・高精度。大メモリ環境向け |
+| **GLM-4.7-Flash** | Dense | ~10GB | 16GB〜 | 最軽量。メモリが少ない環境向け |
 
 ---
 
@@ -59,12 +66,10 @@ export ANTHROPIC_API_KEY="sk-no-key-required"
 claude --model unsloth/Qwen3.5-35B-A3B
 ```
 
-互換ラッパー（従来コマンド）:
+ポートを変更したい場合:
 
 ```bash
-./scripts/start-qwen.sh
-./scripts/start-glm.sh
-./scripts/setup.sh
+LOCAL_LLM_PORT=8002 ./scripts/run-local-llm.sh qwen
 ```
 
 ---
@@ -81,13 +86,11 @@ claude --model unsloth/Qwen3.5-35B-A3B
 .
 ├── README.md
 ├── LICENSE                  # MIT License
+├── .gitignore               # llama.cpp/ unsloth/ 等を除外
 ├── docs/
 │   └── setup-guide.md       # 詳細セットアップ手順
 └── scripts/
-    ├── setup.sh             # 互換ラッパー（内部で run-local-llm.sh を呼ぶ）
-    ├── run-local-llm.sh     # 単一エントリーポイント（未準備なら自動セットアップ）
-    ├── start-qwen.sh        # 互換ラッパー（内部で run-local-llm.sh を呼ぶ）
-    └── start-glm.sh         # 互換ラッパー（内部で run-local-llm.sh を呼ぶ）
+    └── run-local-llm.sh     # 単一エントリーポイント（セットアップ〜起動まで）
 ```
 
 ---

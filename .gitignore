@@ -1,0 +1,23 @@
+# llama.cpp build & binaries
+llama.cpp/
+
+# Downloaded models (tens to hundreds of GB)
+unsloth/
+
+# Logs
+logs/
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
