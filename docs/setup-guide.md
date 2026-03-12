@@ -63,13 +63,13 @@ cp llama.cpp/build/bin/llama-* llama.cpp
 ## STEP 2: モデルのダウンロード
 
 ```bash
-pip install huggingface_hub hf_transfer
+python3 -m pip install --user huggingface_hub hf_transfer
 ```
 
 ### Qwen3.5-35B-A3B の場合
 
 ```bash
-hf download unsloth/Qwen3.5-35B-A3B-GGUF \
+HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/Qwen3.5-35B-A3B-GGUF \
     --local-dir unsloth/Qwen3.5-35B-A3B-GGUF \
     --include "*UD-Q4_K_XL*"
 ```
@@ -77,7 +77,7 @@ hf download unsloth/Qwen3.5-35B-A3B-GGUF \
 ### GLM-4.7-Flash の場合
 
 ```bash
-HF_HUB_ENABLE_HF_TRANSFER=1 hf download unsloth/GLM-4.7-Flash-GGUF \
+HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/GLM-4.7-Flash-GGUF \
     --local-dir unsloth/GLM-4.7-Flash-GGUF \
     --include "*UD-Q4_K_XL*"
 ```
@@ -154,11 +154,13 @@ echo 'export ANTHROPIC_API_KEY="sk-no-key-required"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
+> **注意:** 永続化すると、llama-server が起動していない時も常に localhost へ接続を試みます。公式 API と切り替えて使う場合は、永続化せずに都度 `export` するか、`unset ANTHROPIC_BASE_URL` でリセットしてください。
+
 ---
 
-## STEP 6: KVキャッシュ無効化の修正（重要！）
+## STEP 6: Claude Code の設定（重要！）
 
-> ⚠️ この設定をしないと推論が **90% 遅く** なります。
+> ⚠️ この設定をしないと不要なリクエストが発生し、推論が **90% 遅く** なります。
 
 `~/.claude/settings.json` を以下の内容で作成・編集する:
 
