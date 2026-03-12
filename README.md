@@ -99,7 +99,7 @@ claude --model unsloth/Qwen3.5-35B-A3B
 | デバイス | Apple Silicon Mac（M1〜M4） |
 | メモリ | 24GB以上推奨 |
 | llama.cpp | 2025年3月時点の最新版 |
-| Claude Code | 2026年1月以降のバージョン |
+| Claude Code | 最新版推奨 |
 
 ---
 

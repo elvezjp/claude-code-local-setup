@@ -79,7 +79,8 @@ ensure_llama_cpp() {
 
 ensure_python_deps() {
     echo "▶ Python 依存を確認します..."
-    python3 -m pip install -q huggingface_hub hf_transfer
+    python3 -m pip install --user -q huggingface_hub hf_transfer 2>/dev/null \
+        || python3 -m pip install -q huggingface_hub hf_transfer
     echo "  ✅ huggingface_hub / hf_transfer 準備完了"
 }
 
@@ -143,16 +144,9 @@ download_glm() {
     echo "     保存先: unsloth/GLM-4.7-Flash-GGUF"
     echo "     目安サイズ: 約10GB (UD-Q4_K_XL)"
     echo "     進捗: ターミナルにプログレスバーが表示されます"
-    python3 -c "
-import os; os.environ['HF_HUB_ENABLE_HF_TRANSFER'] = '1'
-os.environ['HF_HUB_DISABLE_PROGRESS_BARS'] = '0'
-from huggingface_hub import snapshot_download
-snapshot_download(
-    repo_id='unsloth/GLM-4.7-Flash-GGUF',
-    local_dir='unsloth/GLM-4.7-Flash-GGUF',
-    allow_patterns=['*UD-Q4_K_XL*'],
-)
-"
+    HF_HUB_ENABLE_HF_TRANSFER=1 hf download unsloth/GLM-4.7-Flash-GGUF \
+        --local-dir unsloth/GLM-4.7-Flash-GGUF \
+        --include "*UD-Q4_K_XL*"
     echo "  ✅ GLM-4.7-Flash ダウンロード完了"
 }
 
@@ -191,6 +185,8 @@ esac
 
 echo "========================================"
 echo " Claude Code × ローカルLLM 起動"
+echo " Tech千一夜"
+echo " https://www.youtube.com/@tech1018/"
 echo "========================================"
 
 ensure_homebrew

@@ -76,16 +76,10 @@ hf download unsloth/Qwen3.5-35B-A3B-GGUF \
 
 ### GLM-4.7-Flash の場合
 
-```python
-import os
-os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
-from huggingface_hub import snapshot_download
-
-snapshot_download(
-    repo_id = "unsloth/GLM-4.7-Flash-GGUF",
-    local_dir = "unsloth/GLM-4.7-Flash-GGUF",
-    allow_patterns = ["*UD-Q4_K_XL*"],
-)
+```bash
+HF_HUB_ENABLE_HF_TRANSFER=1 hf download unsloth/GLM-4.7-Flash-GGUF \
+    --local-dir unsloth/GLM-4.7-Flash-GGUF \
+    --include "*UD-Q4_K_XL*"
 ```
 
 > **量子化について:** `UD-Q4_K_XL` はサイズと精度のバランスが最も良いおすすめ設定。
