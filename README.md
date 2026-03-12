@@ -29,7 +29,7 @@
 ## 🚀 クイックスタート（スクリプト実行）
 
 ```bash
-git clone https://github.com/hdkworks/claude-code-local-setup.git
+git clone https://github.com/elvezjp/claude-code-local-setup.git
 cd claude-code-local-setup
 
 # llama.cpp のビルド〜モデルDL〜Claude Code 設定まで一括セットアップ
