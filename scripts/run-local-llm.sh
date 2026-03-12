@@ -143,6 +143,28 @@ download_qwen() {
     echo "  ✅ Qwen3.5-35B-A3B ダウンロード完了"
 }
 
+download_qwen27b() {
+    echo "  📥 Qwen3.5-27B をダウンロードします..."
+    echo "     保存先: unsloth/Qwen3.5-27B-GGUF"
+    echo "     目安サイズ: 約17.6GB (UD-Q4_K_XL)"
+    echo "     進捗: ターミナルにプログレスバーが表示されます"
+    HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/Qwen3.5-27B-GGUF \
+        --local-dir unsloth/Qwen3.5-27B-GGUF \
+        --include "*UD-Q4_K_XL*"
+    echo "  ✅ Qwen3.5-27B ダウンロード完了"
+}
+
+download_qwen122b() {
+    echo "  📥 Qwen3.5-122B-A10B をダウンロードします..."
+    echo "     保存先: unsloth/Qwen3.5-122B-A10B-GGUF"
+    echo "     目安サイズ: 約77GB (UD-Q4_K_XL, 3分割)"
+    echo "     進捗: ターミナルにプログレスバーが表示されます"
+    HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/Qwen3.5-122B-A10B-GGUF \
+        --local-dir unsloth/Qwen3.5-122B-A10B-GGUF \
+        --include "*UD-Q4_K_XL*"
+    echo "  ✅ Qwen3.5-122B-A10B ダウンロード完了"
+}
+
 download_glm() {
     echo "  📥 GLM-4.7-Flash をダウンロードします..."
     echo "     保存先: unsloth/GLM-4.7-Flash-GGUF"
@@ -157,13 +179,17 @@ download_glm() {
 MODEL_CHOICE="${1:-}"
 if [ -z "${MODEL_CHOICE}" ]; then
     echo "▶ 起動するモデルを選んでください"
-    echo "  1) qwen (Qwen3.5-35B-A3B)"
-    echo "  2) glm  (GLM-4.7-Flash)"
-    read -rp "番号を入力してください [1/2]: " NUM
+    echo "  1) qwen     (Qwen3.5-35B-A3B  — MoE, 軽量・高速)"
+    echo "  2) qwen27b  (Qwen3.5-27B     — Dense, 高精度)"
+    echo "  3) qwen122b (Qwen3.5-122B-A10B — MoE, 大規模・高精度, ~77GB)"
+    echo "  4) glm      (GLM-4.7-Flash   — 軽量・高速)"
+    read -rp "番号を入力してください [1/2/3/4]: " NUM
 
     case "${NUM}" in
         1) MODEL_CHOICE="qwen" ;;
-        2) MODEL_CHOICE="glm" ;;
+        2) MODEL_CHOICE="qwen27b" ;;
+        3) MODEL_CHOICE="qwen122b" ;;
+        4) MODEL_CHOICE="glm" ;;
         *) echo "❌ 無効な入力です"; exit 1 ;;
     esac
 fi
@@ -175,6 +201,18 @@ case "${MODEL_CHOICE}" in
         START_ARGS=(--temp 0.6 --top-p 0.95 --top-k 20 --min-p 0.00 --ctx-size 131072)
         DOWNLOAD_FN=download_qwen
         ;;
+    qwen27b)
+        MODEL_PATH="unsloth/Qwen3.5-27B-GGUF/Qwen3.5-27B-UD-Q4_K_XL.gguf"
+        MODEL_ALIAS="unsloth/Qwen3.5-27B"
+        START_ARGS=(--temp 0.6 --top-p 0.95 --min-p 0.00 --ctx-size 131072)
+        DOWNLOAD_FN=download_qwen27b
+        ;;
+    qwen122b)
+        MODEL_PATH="unsloth/Qwen3.5-122B-A10B-GGUF/UD-Q4_K_XL/Qwen3.5-122B-A10B-UD-Q4_K_XL-00001-of-00003.gguf"
+        MODEL_ALIAS="unsloth/Qwen3.5-122B-A10B"
+        START_ARGS=(--temp 0.6 --top-p 0.95 --top-k 20 --min-p 0.00 --ctx-size 131072)
+        DOWNLOAD_FN=download_qwen122b
+        ;;
     glm)
         MODEL_PATH="unsloth/GLM-4.7-Flash-GGUF/GLM-4.7-Flash-UD-Q4_K_XL.gguf"
         MODEL_ALIAS="unsloth/GLM-4.7-Flash"
@@ -182,7 +220,7 @@ case "${MODEL_CHOICE}" in
         DOWNLOAD_FN=download_glm
         ;;
     *)
-        echo "❌ モデル指定は qwen / glm のみ対応です"
+        echo "❌ モデル指定は qwen / qwen27b / qwen122b / glm のみ対応です"
         exit 1
         ;;
 esac

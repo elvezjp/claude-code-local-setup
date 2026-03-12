@@ -22,7 +22,7 @@
 
 - **Apple Silicon Mac** で llama.cpp を使いローカルLLMを動かす
 - **Claude Code** のバックエンドをローカルLLMに切り替える
-- **Qwen3.5-35B-A3B** / **GLM-4.7-Flash** どちらでも動作確認済み
+- **Qwen3.5-35B-A3B** / **Qwen3.5-27B** / **Qwen3.5-122B-A10B** / **GLM-4.7-Flash** で動作確認済み
 
 ---
 
@@ -37,7 +37,7 @@ cd claude-code-local-setup
 ./scripts/run-local-llm.sh
 ```
 
-※ 従来どおり `./scripts/run-local-llm.sh qwen` / `glm` の直接指定も可能です。
+※ 従来どおり `./scripts/run-local-llm.sh qwen` / `qwen27b` / `qwen122b` / `glm` の直接指定も可能です。
 
 モデルダウンロード中は、ターミナルに進捗バー（% / 速度 / 残り時間）が表示されます。
 
