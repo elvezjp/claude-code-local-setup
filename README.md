@@ -32,15 +32,39 @@
 git clone https://github.com/elvezjp/claude-code-local-setup.git
 cd claude-code-local-setup
 
-# llama.cpp のビルド〜モデルDL〜Claude Code 設定まで一括セットアップ
-./scripts/setup.sh
+# 1コマンドで起動（実行後にモデル選択）
+# 未準備なら Homebrew/Python/Claude Code/llama.cpp/モデル を自動セットアップ
+./scripts/run-local-llm.sh
 ```
 
-セットアップ後はモデルを選んで起動：
+※ 従来どおり `./scripts/run-local-llm.sh qwen` / `glm` の直接指定も可能です。
+
+モデルダウンロード中は、ターミナルに進捗バー（% / 速度 / 残り時間）が表示されます。
+
+このスクリプトは、未準備時に以下を自動セットアップします。
+
+- Homebrew（未導入時）
+- Python 3 / pip（未導入時）
+- Claude Code（未導入時）
+- llama.cpp のビルド
+- 選択モデル（GGUF）のダウンロード
+
+ローカルLLM起動後、別ターミナルで Claude Code を使う場合:
 
 ```bash
-./scripts/start-qwen.sh    # Qwen3.5-35B-A3B を起動
-./scripts/start-glm.sh     # GLM-4.7-Flash を起動
+export ANTHROPIC_BASE_URL="http://localhost:8001"
+export ANTHROPIC_API_KEY="sk-no-key-required"
+
+# 例: Qwen を使う場合
+claude --model unsloth/Qwen3.5-35B-A3B
+```
+
+互換ラッパー（従来コマンド）:
+
+```bash
+./scripts/start-qwen.sh
+./scripts/start-glm.sh
+./scripts/setup.sh
 ```
 
 ---
@@ -60,9 +84,10 @@ cd claude-code-local-setup
 ├── docs/
 │   └── setup-guide.md       # 詳細セットアップ手順
 └── scripts/
-    ├── setup.sh             # 一括セットアップ（llama.cpp + Claude Code設定）
-    ├── start-qwen.sh        # Qwen3.5 サーバー起動
-    └── start-glm.sh         # GLM-4.7-Flash サーバー起動
+    ├── setup.sh             # 互換ラッパー（内部で run-local-llm.sh を呼ぶ）
+    ├── run-local-llm.sh     # 単一エントリーポイント（未準備なら自動セットアップ）
+    ├── start-qwen.sh        # 互換ラッパー（内部で run-local-llm.sh を呼ぶ）
+    └── start-glm.sh         # 互換ラッパー（内部で run-local-llm.sh を呼ぶ）
 ```
 
 ---

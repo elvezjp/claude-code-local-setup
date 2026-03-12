@@ -5,11 +5,42 @@
 
 ---
 
+## 最短手順（推奨）
+
+```bash
+./scripts/run-local-llm.sh
+```
+
+実行後にモデルを選択できます。未準備の場合は次を自動実行します。
+
+- Homebrew / Python 3
+- Claude Code インストール
+- llama.cpp のビルド
+- モデル（GGUF）のダウンロード
+
+通常はこの最短手順だけで十分です。以降の STEP 1-7 は、内部処理を手動で行いたい場合の参考手順です。
+
+ローカルLLM起動後、別ターミナルで Claude Code を使う場合:
+
+```bash
+export ANTHROPIC_BASE_URL="http://localhost:8001"
+export ANTHROPIC_API_KEY="sk-no-key-required"
+
+# 例: Qwen を使う場合
+claude --model unsloth/Qwen3.5-35B-A3B
+```
+
+モデルダウンロード中は、ターミナルに進捗バー（% / 速度 / 残り時間）が表示されます。
+
+---
+
 ## 前提条件
 
 - Apple Silicon Mac（M1/M2/M3/M4）
-- Homebrew インストール済み
-- Python 3.x インストール済み
+- Homebrew / Python 3 は未導入でも `./scripts/run-local-llm.sh` が自動セットアップを試行
+
+> 初回セットアップ時は Homebrew インストールのため、管理者パスワード入力が求められる場合があります。
+> モデル容量が大きいため、十分な空きディスク容量（目安: 15GB〜30GB以上）を確保してください。
 
 ---
 
@@ -157,6 +188,7 @@ source ~/.zshrc
 ```
 
 > **Note:** `export CLAUDE_CODE_ATTRIBUTION_HEADER=0` では効かない。必ず `settings.json` に書くこと。
+> `run-local-llm.sh` は `~/.claude/settings.json` が存在しない場合のみ初期ファイルを作成します。既存ファイルがある場合は、上記キーを手動で反映してください。
 
 ---
 
