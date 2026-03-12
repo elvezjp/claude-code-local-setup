@@ -66,11 +66,19 @@ export ANTHROPIC_API_KEY="sk-no-key-required"
 claude --model unsloth/Qwen3.5-35B-A3B
 ```
 
+環境の状態を確認:
+
+```bash
+./scripts/run-local-llm.sh status
+```
+
 ポートを変更したい場合:
 
 ```bash
 LOCAL_LLM_PORT=8002 ./scripts/run-local-llm.sh qwen
 ```
+
+セットアップ・起動のログは `logs/` ディレクトリに自動保存されます。トラブル時の共有に便利です。
 
 ---
 

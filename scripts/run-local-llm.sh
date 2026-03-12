@@ -12,6 +12,127 @@ cd "${REPO_ROOT}"
 LLAMA_REPO_DIR="${REPO_ROOT}/llama.cpp"
 LLAMA_SERVER_BIN="${LLAMA_REPO_DIR}/llama-server"
 PORT="${LOCAL_LLM_PORT:-8001}"
+LOG_DIR="${REPO_ROOT}/logs"
+
+# =============================================================
+# status サブコマンド
+# =============================================================
+
+show_status() {
+    echo "========================================"
+    echo " 環境ステータス"
+    echo "========================================"
+
+    # システム
+    local arch mem_gb free_gb
+    arch="$(uname -m)"
+    mem_gb=$(sysctl -n hw.memsize 2>/dev/null | awk '{printf "%.0f", $1/1024/1024/1024}')
+    free_gb=$(df -g "${REPO_ROOT}" | awk 'NR==2{print $4}')
+    echo ""
+    echo "[システム]"
+    echo "  macOS:           $(sw_vers -productVersion 2>/dev/null || echo '不明')"
+    echo "  アーキテクチャ:   ${arch}"
+    echo "  メモリ:          ${mem_gb}GB"
+    echo "  空きディスク:     ${free_gb}GB"
+
+    # ツール
+    echo ""
+    echo "[ツール]"
+    if command -v brew >/dev/null 2>&1; then
+        echo "  Homebrew:        ✅ $(brew --version 2>/dev/null | head -1)"
+    else
+        echo "  Homebrew:        ❌ 未インストール"
+    fi
+
+    if command -v python3 >/dev/null 2>&1; then
+        echo "  Python 3:        ✅ $(python3 --version 2>/dev/null)"
+    else
+        echo "  Python 3:        ❌ 未インストール"
+    fi
+
+    if python3 -m huggingface_hub download --help >/dev/null 2>&1; then
+        echo "  huggingface_hub: ✅"
+    else
+        echo "  huggingface_hub: ❌ 未インストール"
+    fi
+
+    if command -v claude >/dev/null 2>&1; then
+        echo "  Claude Code:     ✅ $(claude --version 2>/dev/null || echo 'インストール済み')"
+    else
+        echo "  Claude Code:     ❌ 未インストール"
+    fi
+
+    if [ -x "${LLAMA_SERVER_BIN}" ]; then
+        echo "  llama-server:    ✅ ${LLAMA_SERVER_BIN}"
+    else
+        echo "  llama-server:    ❌ 未ビルド"
+    fi
+
+    # settings.json
+    echo ""
+    echo "[設定]"
+    local settings="${HOME}/.claude/settings.json"
+    if [ -f "${settings}" ]; then
+        echo "  settings.json:   ✅ ${settings}"
+    else
+        echo "  settings.json:   ❌ 未作成（初回起動時に自動作成）"
+    fi
+
+    # モデル
+    echo ""
+    echo "[ダウンロード済みモデル]"
+    local found=0
+    for d in unsloth/*/; do
+        if [ -d "${d}" ] && ls "${d}"*UD-Q4_K_XL* >/dev/null 2>&1; then
+            local size
+            size=$(du -sh "${d}" 2>/dev/null | awk '{print $1}')
+            echo "  ✅ ${d} (${size})"
+            found=1
+        elif [ -d "${d}" ]; then
+            # 分割ファイル（サブディレクトリ内）
+            if ls "${d}"UD-Q4_K_XL/*UD-Q4_K_XL* >/dev/null 2>&1; then
+                local size
+                size=$(du -sh "${d}" 2>/dev/null | awk '{print $1}')
+                echo "  ✅ ${d} (${size})"
+                found=1
+            fi
+        fi
+    done
+    if [ "${found}" -eq 0 ]; then
+        echo "  （なし）"
+    fi
+
+    # ポート
+    echo ""
+    echo "[ポート]"
+    if lsof -i :"${PORT}" >/dev/null 2>&1; then
+        local pid
+        pid=$(lsof -ti :"${PORT}" 2>/dev/null | head -1)
+        echo "  ポート ${PORT}:    🟢 使用中 (PID: ${pid})"
+    else
+        echo "  ポート ${PORT}:    ⚪ 空き"
+    fi
+
+    echo ""
+    exit 0
+}
+
+# status サブコマンドの早期処理
+if [ "${1:-}" = "status" ]; then
+    show_status
+fi
+
+# =============================================================
+# ログ保存
+# =============================================================
+
+setup_logging() {
+    mkdir -p "${LOG_DIR}"
+    LOG_FILE="${LOG_DIR}/run-$(date +%Y%m%d-%H%M%S).log"
+    echo "▶ ログ保存先: ${LOG_FILE}"
+    # 標準出力・標準エラーを tee でログに記録（ターミナル表示も維持）
+    exec > >(tee -a "${LOG_FILE}") 2>&1
+}
 
 # =============================================================
 # 事前チェック
@@ -25,13 +146,18 @@ preflight_check() {
     arch="$(uname -m)"
     if [ "${arch}" != "arm64" ]; then
         echo "❌ Apple Silicon (arm64) が必要です（検出: ${arch}）"
+        echo ""
         echo "   このスクリプトは Apple Silicon Mac 専用です。"
+        echo "   Intel Mac では Metal GPU 加速が使えないため、実用的な速度が出ません。"
         exit 1
     fi
 
     # macOS チェック
     if [ "$(uname -s)" != "Darwin" ]; then
         echo "❌ macOS が必要です（検出: $(uname -s)）"
+        echo ""
+        echo "   Linux の場合は CUDA 版 llama.cpp を直接ビルドしてください:"
+        echo "   https://github.com/ggml-org/llama.cpp"
         exit 1
     fi
 
@@ -41,16 +167,22 @@ preflight_check() {
     echo "  メモリ: ${mem_gb}GB"
     if [ "${mem_gb}" -lt 16 ]; then
         echo "❌ 16GB 以上のメモリが必要です（検出: ${mem_gb}GB）"
+        echo ""
+        echo "   GLM-4.7-Flash (~10GB) なら 16GB で動作可能です。"
+        echo "   再実行: $0 glm"
         exit 1
     fi
 
-    # 空きディスク容量チェック（モデルサイズの1.5倍 + ビルド用5GB）
+    # 空きディスク容量チェック
     local free_gb
     free_gb=$(df -g "${REPO_ROOT}" | awk 'NR==2{print $4}')
     echo "  空きディスク: ${free_gb}GB"
     if [ "${free_gb}" -lt "${REQUIRED_DISK_GB}" ]; then
         echo "❌ 空きディスク容量が不足しています（必要: ${REQUIRED_DISK_GB}GB, 空き: ${free_gb}GB）"
-        echo "   不要なファイルを削除してから再実行してください。"
+        echo ""
+        echo "   不要なファイルを削除するか、より小さいモデルを選択してください:"
+        echo "   $0 glm  (必要: 15GB)"
+        echo "   $0 qwen (必要: 30GB)"
         exit 1
     fi
 
@@ -58,6 +190,7 @@ preflight_check() {
     if [ "${mem_gb}" -lt "${RECOMMENDED_RAM_GB}" ]; then
         echo "  ⚠️  推奨メモリ: ${RECOMMENDED_RAM_GB}GB 以上（現在: ${mem_gb}GB）"
         echo "     メモリ不足で動作が遅くなる、または起動に失敗する可能性があります。"
+        echo "     より小さいモデルを推奨: $0 qwen または $0 glm"
         read -rp "  続行しますか? [y/N]: " CONT
         if [ "${CONT}" != "y" ] && [ "${CONT}" != "Y" ]; then
             exit 0
@@ -66,8 +199,13 @@ preflight_check() {
 
     # ポート使用チェック
     if lsof -i :"${PORT}" >/dev/null 2>&1; then
-        echo "❌ ポート ${PORT} は既に使用されています。"
-        echo "   別のポートを指定するには: LOCAL_LLM_PORT=8002 $0 ${MODEL_CHOICE}"
+        local pid
+        pid=$(lsof -ti :"${PORT}" 2>/dev/null | head -1)
+        echo "❌ ポート ${PORT} は既に使用されています (PID: ${pid})"
+        echo ""
+        echo "   対処方法:"
+        echo "   1) 既存プロセスを停止: kill ${pid}"
+        echo "   2) 別のポートを使用:   LOCAL_LLM_PORT=8002 $0 ${MODEL_CHOICE}"
         exit 1
     fi
 
@@ -97,7 +235,9 @@ ensure_homebrew() {
 
     if ! command -v brew >/dev/null 2>&1; then
         echo "❌ Homebrew のインストール確認に失敗しました。"
+        echo ""
         echo "   ターミナルを再起動してから再実行してください。"
+        echo "   手動インストール: https://brew.sh"
         exit 1
     fi
     echo "  ✅ Homebrew インストール完了"
@@ -117,7 +257,10 @@ ensure_python_runtime() {
 
     if ! python3 -m pip --version >/dev/null 2>&1; then
         echo "❌ Python/pip の準備に失敗しました。"
-        echo "   brew install python を試してください。"
+        echo ""
+        echo "   次のコマンドを試してください:"
+        echo "   brew install python"
+        echo "   python3 -m ensurepip --upgrade"
         exit 1
     fi
     echo "  ✅ Python 3 / pip 準備完了"
@@ -150,7 +293,12 @@ ensure_python_deps() {
         || python3 -m pip install -q huggingface_hub hf_transfer
     if ! python3 -m huggingface_hub download --help >/dev/null 2>&1; then
         echo "❌ huggingface_hub CLI の準備に失敗しました。"
-        echo "   python3 -m pip install --user huggingface_hub hf_transfer を試してください。"
+        echo ""
+        echo "   次のコマンドを試してください:"
+        echo "   python3 -m pip install --user huggingface_hub hf_transfer"
+        echo ""
+        echo "   externally-managed-environment エラーの場合:"
+        echo "   python3 -m pip install --break-system-packages huggingface_hub hf_transfer"
         exit 1
     fi
     echo "  ✅ huggingface_hub / hf_transfer 準備完了"
@@ -289,7 +437,9 @@ case "${MODEL_CHOICE}" in
         ;;
     *)
         echo "❌ 対応モデル: qwen / qwen27b / qwen122b / glm"
+        echo ""
         echo "   使用例: $0 qwen"
+        echo "   状態確認: $0 status"
         exit 1
         ;;
 esac
@@ -304,6 +454,7 @@ echo " Tech千一夜"
 echo " https://www.youtube.com/@tech1018/"
 echo "========================================"
 
+setup_logging
 preflight_check
 ensure_homebrew
 ensure_python_runtime
