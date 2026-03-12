@@ -82,24 +82,63 @@ show_status() {
     echo ""
     echo "[ダウンロード済みモデル]"
     local found=0
-    for d in unsloth/*/; do
-        if [ -d "${d}" ] && ls "${d}"*UD-Q4_K_XL* >/dev/null 2>&1; then
-            local size
-            size=$(du -sh "${d}" 2>/dev/null | awk '{print $1}')
-            echo "  ✅ ${d} (${size})"
-            found=1
-        elif [ -d "${d}" ]; then
-            # 分割ファイル（サブディレクトリ内）
-            if ls "${d}"UD-Q4_K_XL/*UD-Q4_K_XL* >/dev/null 2>&1; then
-                local size
-                size=$(du -sh "${d}" 2>/dev/null | awk '{print $1}')
-                echo "  ✅ ${d} (${size})"
-                found=1
-            fi
-        fi
-    done
+    local model_dir model_file size shard_count
+
+    # Qwen3.5-35B-A3B
+    model_dir="unsloth/Qwen3.5-35B-A3B-GGUF"
+    model_file="${model_dir}/Qwen3.5-35B-A3B-UD-Q4_K_XL.gguf"
+    if [ -f "${model_file}" ]; then
+        size=$(du -sh "${model_dir}" 2>/dev/null | awk '{print $1}')
+        echo "  ✅ Qwen3.5-35B-A3B (${size})"
+        found=1
+    elif [ -d "${model_dir}" ]; then
+        echo "  ⏳ Qwen3.5-35B-A3B (部分ダウンロード/未完了)"
+    fi
+
+    # Qwen3.5-27B
+    model_dir="unsloth/Qwen3.5-27B-GGUF"
+    model_file="${model_dir}/Qwen3.5-27B-UD-Q4_K_XL.gguf"
+    if [ -f "${model_file}" ]; then
+        size=$(du -sh "${model_dir}" 2>/dev/null | awk '{print $1}')
+        echo "  ✅ Qwen3.5-27B (${size})"
+        found=1
+    elif [ -d "${model_dir}" ]; then
+        echo "  ⏳ Qwen3.5-27B (部分ダウンロード/未完了)"
+    fi
+
+    # Qwen3.5-122B-A10B (3分割)
+    model_dir="unsloth/Qwen3.5-122B-A10B-GGUF/UD-Q4_K_XL"
+    shard_count=0
+    if [ -f "${model_dir}/Qwen3.5-122B-A10B-UD-Q4_K_XL-00001-of-00003.gguf" ]; then
+        shard_count=$((shard_count + 1))
+    fi
+    if [ -f "${model_dir}/Qwen3.5-122B-A10B-UD-Q4_K_XL-00002-of-00003.gguf" ]; then
+        shard_count=$((shard_count + 1))
+    fi
+    if [ -f "${model_dir}/Qwen3.5-122B-A10B-UD-Q4_K_XL-00003-of-00003.gguf" ]; then
+        shard_count=$((shard_count + 1))
+    fi
+    if [ "${shard_count}" -eq 3 ]; then
+        size=$(du -sh "unsloth/Qwen3.5-122B-A10B-GGUF" 2>/dev/null | awk '{print $1}')
+        echo "  ✅ Qwen3.5-122B-A10B (${size})"
+        found=1
+    elif [ -d "unsloth/Qwen3.5-122B-A10B-GGUF" ]; then
+        echo "  ⏳ Qwen3.5-122B-A10B (分割 ${shard_count}/3, 未完了)"
+    fi
+
+    # GLM-4.7-Flash
+    model_dir="unsloth/GLM-4.7-Flash-GGUF"
+    model_file="${model_dir}/GLM-4.7-Flash-UD-Q4_K_XL.gguf"
+    if [ -f "${model_file}" ]; then
+        size=$(du -sh "${model_dir}" 2>/dev/null | awk '{print $1}')
+        echo "  ✅ GLM-4.7-Flash (${size})"
+        found=1
+    elif [ -d "${model_dir}" ]; then
+        echo "  ⏳ GLM-4.7-Flash (部分ダウンロード/未完了)"
+    fi
+
     if [ "${found}" -eq 0 ]; then
-        echo "  （なし）"
+        echo "  （完了済みモデルなし）"
     fi
 
     # ポート

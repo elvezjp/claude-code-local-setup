@@ -74,6 +74,22 @@ HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/Qwen3.5-
     --include "*UD-Q4_K_XL*"
 ```
 
+### Qwen3.5-27B の場合
+
+```bash
+HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/Qwen3.5-27B-GGUF \
+    --local-dir unsloth/Qwen3.5-27B-GGUF \
+    --include "*UD-Q4_K_XL*"
+```
+
+### Qwen3.5-122B-A10B の場合（3分割）
+
+```bash
+HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/Qwen3.5-122B-A10B-GGUF \
+    --local-dir unsloth/Qwen3.5-122B-A10B-GGUF \
+    --include "*UD-Q4_K_XL*"
+```
+
 ### GLM-4.7-Flash の場合
 
 ```bash
@@ -107,6 +123,39 @@ HF_HUB_ENABLE_HF_TRANSFER=1 python3 -m huggingface_hub download unsloth/GLM-4.7-
 
 > Thinking モードを無効にしたい場合（コーディング用途で高速化）:  
 > 末尾に `--chat-template-kwargs "{\"enable_thinking\": false}"` を追加
+
+### Qwen3.5-27B の場合
+
+```bash
+./llama.cpp/llama-server \
+    --model unsloth/Qwen3.5-27B-GGUF/Qwen3.5-27B-UD-Q4_K_XL.gguf \
+    --alias "unsloth/Qwen3.5-27B" \
+    --temp 0.6 \
+    --top-p 0.95 \
+    --min-p 0.00 \
+    --port 8001 \
+    --kv-unified \
+    --cache-type-k q8_0 --cache-type-v q8_0 \
+    --flash-attn on --fit on \
+    --ctx-size 131072
+```
+
+### Qwen3.5-122B-A10B の場合（3分割）
+
+```bash
+./llama.cpp/llama-server \
+    --model unsloth/Qwen3.5-122B-A10B-GGUF/UD-Q4_K_XL/Qwen3.5-122B-A10B-UD-Q4_K_XL-00001-of-00003.gguf \
+    --alias "unsloth/Qwen3.5-122B-A10B" \
+    --temp 0.6 \
+    --top-p 0.95 \
+    --top-k 20 \
+    --min-p 0.00 \
+    --port 8001 \
+    --kv-unified \
+    --cache-type-k q8_0 --cache-type-v q8_0 \
+    --flash-attn on --fit on \
+    --ctx-size 32768
+```
 
 ### GLM-4.7-Flash の場合
 
