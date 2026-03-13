@@ -525,9 +525,18 @@ echo ""
     --flash-attn on --fit on \
     "${START_ARGS[@]}" &
 LLAMA_PID=$!
+SERVER_STARTED=1
 
-# Ctrl+C でサーバーも終了するようにトラップ
-trap 'echo ""; echo "▶ サーバーを停止します..."; kill "${LLAMA_PID}" 2>/dev/null; exit 0' INT TERM
+# 終了時にサーバーを確実に停止（エラー終了も含む）
+cleanup_server() {
+    if [ "${SERVER_STARTED:-0}" -eq 1 ] && kill -0 "${LLAMA_PID}" 2>/dev/null; then
+        kill "${LLAMA_PID}" 2>/dev/null || true
+    fi
+}
+trap cleanup_server EXIT
+
+# Ctrl+C で明示メッセージを出して終了（EXIT trap で cleanup_server 実行）
+trap 'echo ""; echo "▶ サーバーを停止します..."; exit 0' INT TERM
 
 # ポートが開くまで待機（最大120秒）
 echo "▶ サーバーの準備を待っています..."
@@ -544,7 +553,7 @@ done
 echo "  ✅ サーバー起動完了"
 
 # Claude Code を別ウィンドウで自動起動
-CLAUDE_CMD="export ANTHROPIC_BASE_URL='http://localhost:${PORT}'; export ANTHROPIC_API_KEY='sk-no-key-required'; claude --model ${MODEL_ALIAS}"
+CLAUDE_CMD="cd \"${REPO_ROOT}\"; export ANTHROPIC_BASE_URL='http://localhost:${PORT}'; export ANTHROPIC_API_KEY='sk-no-key-required'; claude --model ${MODEL_ALIAS}"
 
 if [ "${TERM_PROGRAM}" = "iTerm.app" ]; then
     # iTerm2
