@@ -4,6 +4,7 @@
 
 [![YouTube](https://img.shields.io/badge/YouTube-Tech千一夜-red?logo=youtube)](https://www.youtube.com/@tech1018/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Contributing](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 ---
 
@@ -118,6 +119,21 @@ LOCAL_LLM_PORT=8002 ./scripts/run-local-llm.sh qwen
 
 - Claude Code は頻繁にアップデートされます。手順が古くなった場合は Issue でお知らせください。
 - `--dangerously-skip-permissions` オプションは、Claude Code がすべての操作を無確認で実行します。使用には注意してください。
+
+---
+
+## 📄 ライセンス
+
+MIT License — 詳細は [LICENSE](LICENSE) を参照してください。
+
+---
+
+## 🤝 コントリビューション
+
+バグ報告・改善提案は [Issues](https://github.com/elvezjp/claude-code-local-setup/issues) へ。
+貢献方法の詳細は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
+
+セキュリティ上の問題は [SECURITY.md](SECURITY.md) の手順でご報告ください。
 
 ---
 
