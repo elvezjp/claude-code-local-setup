@@ -511,13 +511,11 @@ fi
 
 echo ""
 echo "▶ ${MODEL_ALIAS} を起動します（ポート ${PORT}）"
-echo "  停止するには Ctrl+C"
-echo "  別ターミナルで Claude Code を使うときは以下を実行:"
-echo "    export ANTHROPIC_BASE_URL='http://localhost:${PORT}'"
-echo "    export ANTHROPIC_API_KEY='sk-no-key-required'"
-echo "    claude --model ${MODEL_ALIAS}"
+echo "  準備が整うと Claude Code が自動で別ウィンドウに開きます"
+echo "  このウィンドウはサーバーログ専用です（Ctrl+C で停止）"
 echo ""
 
+# llamaサーバーをバックグラウンドで起動
 "${LLAMA_SERVER_BIN}" \
     --model "${MODEL_PATH}" \
     --alias "${MODEL_ALIAS}" \
@@ -525,4 +523,52 @@ echo ""
     --kv-unified \
     --cache-type-k q8_0 --cache-type-v q8_0 \
     --flash-attn on --fit on \
-    "${START_ARGS[@]}"
+    "${START_ARGS[@]}" &
+LLAMA_PID=$!
+
+# Ctrl+C でサーバーも終了するようにトラップ
+trap 'echo ""; echo "▶ サーバーを停止します..."; kill "${LLAMA_PID}" 2>/dev/null; exit 0' INT TERM
+
+# ポートが開くまで待機（最大120秒）
+echo "▶ サーバーの準備を待っています..."
+WAIT_COUNT=0
+until lsof -i :"${PORT}" >/dev/null 2>&1; do
+    sleep 1
+    WAIT_COUNT=$((WAIT_COUNT + 1))
+    if [ "${WAIT_COUNT}" -ge 120 ]; then
+        echo "❌ サーバーの起動がタイムアウトしました（120秒）"
+        kill "${LLAMA_PID}" 2>/dev/null
+        exit 1
+    fi
+done
+echo "  ✅ サーバー起動完了"
+
+# Claude Code を別ウィンドウで自動起動
+CLAUDE_CMD="export ANTHROPIC_BASE_URL='http://localhost:${PORT}'; export ANTHROPIC_API_KEY='sk-no-key-required'; claude --model ${MODEL_ALIAS}"
+
+if [ "${TERM_PROGRAM}" = "iTerm.app" ]; then
+    # iTerm2
+    osascript <<APPLESCRIPT
+tell application "iTerm2"
+    create window with default profile
+    tell current session of current window
+        write text "${CLAUDE_CMD}"
+    end tell
+end tell
+APPLESCRIPT
+else
+    # Terminal.app（デフォルト）
+    osascript <<APPLESCRIPT
+tell application "Terminal"
+    do script "${CLAUDE_CMD}"
+    activate
+end tell
+APPLESCRIPT
+fi
+
+echo "  ✅ Claude Code を別ウィンドウで起動しました"
+echo ""
+echo "  ── サーバーログ ──────────────────────────"
+
+# サーバープロセスが終わるまで待機
+wait "${LLAMA_PID}"
