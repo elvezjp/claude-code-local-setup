@@ -2,6 +2,7 @@
 
 > **Tech千一夜** で解説した、Claude Code にローカルLLMを接続する手順をまとめたリポジトリです。
 
+[![Tech千一夜 YouTubeチャンネル](./images/channel_icon.png)](https://www.youtube.com/channel/UCASQiIkKCsZmaJHc4SDxyVg)
 [![YouTube](https://img.shields.io/badge/YouTube-Tech千一夜-red?logo=youtube)](https://www.youtube.com/@tech1018/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Contributing](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
