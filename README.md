@@ -12,12 +12,7 @@
 
 ## 📺 関連動画
 
-> *(動画公開後にURLを追記)*
-
-<!-- 動画サムネイル -->
-<!--
-[![動画タイトル](https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg)](https://www.youtube.com/watch?v=VIDEO_ID)
--->
+[![関連動画](https://img.youtube.com/vi/q1Xtrr_Crrc/maxresdefault.jpg)](https://www.youtube.com/watch?v=q1Xtrr_Crrc)
 
 ---
 
