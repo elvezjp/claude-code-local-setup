@@ -1,35 +1,63 @@
+[English](./SECURITY.md) | [日本語](./SECURITY_ja.md)
+
 # Security Policy
 
-## サポート対象バージョン
+## Supported Versions
 
-本リポジトリはスクリプト・設定ファイルのセットアップガイドであり、バージョン管理されたソフトウェアパッケージではありません。
-常に `main` ブランチの最新版を使用してください。
+This repository is a setup guide for scripts and configuration files, not a versioned software package.
+Always use the latest version from the `main` branch.
 
-| バージョン | サポート状況 |
-|------------|-------------|
-| main ブランチ（最新） | サポート中 |
-| 過去のコミット | サポート対象外 |
+| Version | Supported |
+|---------|-----------|
+| main branch (latest) | :white_check_mark: |
+| Past commits | :x: |
 
-## 脆弱性の報告方法
+## Reporting a Vulnerability
 
-セキュリティ上の問題を発見した場合は、**公開 Issue への投稿を避けてください。**
+If you discover a security issue, **please do not post it as a public Issue.**
 
-代わりに、GitHub の [プライベートな脆弱性報告](https://github.com/elvezjp/claude-code-local-setup/security/advisories/new) 機能を使って報告してください。
+Instead, please report it using GitHub's [private vulnerability reporting](https://github.com/elvezjp/claude-code-local-setup/security/advisories/new) feature.
 
-報告内容には以下を含めてください。
+Please include the following in your report:
 
-- 問題の概要と影響範囲
-- 再現手順（可能であれば）
-- 環境情報（macOS バージョン、使用スクリプト等）
+- Description of the vulnerability
+- Steps to reproduce the issue
+- Potential impact and severity
+- Suggested fix or mitigation (if possible)
+- Contact information (optional)
 
-## 対応の目安
+## Response Schedule
 
-報告を受け取り次第、内容を確認します。対応状況はプライベートな報告スレッド上でお知らせします。
+- **Initial response**: within 48 hours
+- **Status update**: within 7 days
+- **Resolution**: depending on severity
+  - Critical: within 14 days
+  - High: within 30 days
+  - Medium: within 60 days
+  - Low: next release cycle
 
-## スクリプト実行上のセキュリティ注意事項
+Status updates will be communicated through the private reporting thread.
 
-本リポジトリのスクリプトを実行する際は、以下の点に注意してください。
+## Security Notes for Script Execution
 
-- `--dangerously-skip-permissions` オプションは Claude Code のすべての操作を無確認で実行します。信頼できる環境でのみ使用してください。
-- `ANTHROPIC_API_KEY="sk-no-key-required"` はローカルLLM接続専用の設定です。公式 Anthropic API に接続する際は、実際の API キーを使用してください。
-- モデルファイルは公式ソース（Hugging Face の unsloth リポジトリ）からダウンロードしてください。
+When running scripts from this repository, please be aware of the following:
+
+- The `--dangerously-skip-permissions` option runs all Claude Code operations without confirmation. Use only in trusted environments.
+- `ANTHROPIC_API_KEY="sk-no-key-required"` is a local LLM-only setting. Use your actual API key when connecting to the official Anthropic API.
+- Download model files only from official sources (the unsloth repository on Hugging Face).
+- The Homebrew / Claude Code installation uses `curl | bash`-style scripts. Review the script content before executing if desired.
+
+## Security Best Practices
+
+1. Always use the latest version from the `main` branch
+2. Review script content before executing
+3. Use `--dangerously-skip-permissions` only in trusted environments
+4. Download model files only from official sources
+5. Do not mistakenly use local LLM settings (e.g., dummy API keys) when connecting to the official API
+
+## Contact
+
+For general security-related questions that are not vulnerabilities, post to [Issues](https://github.com/elvezjp/claude-code-local-setup/issues) or contact us at:
+
+- **Email**: info@elvez.co.jp
+- **Organization**: Elvez Inc.

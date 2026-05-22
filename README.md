@@ -1,143 +1,211 @@
-# 🦥 Claude Code × ローカルLLM セットアップガイド（Mac対応）
+# claude-code-local-setup
 
-> **Tech千一夜** で解説した、Claude Code にローカルLLMを接続する手順をまとめたリポジトリです。
+[English](./README.md) | [日本語](./README_ja.md)
 
-<p align="center"><a href="https://www.youtube.com/channel/UCASQiIkKCsZmaJHc4SDxyVg"><img src="./images/channel_icon.png" width="120" alt="Tech千一夜 YouTubeチャンネル"></a></p>
-
+[![Elvez](https://img.shields.io/badge/Elvez-Product-3F61A7?style=flat-square)](https://elvez.co.jp/)
 [![YouTube](https://img.shields.io/badge/YouTube-Tech千一夜-red?logo=youtube)](https://www.youtube.com/@tech1018/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Contributing](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
----
+> A repository summarizing the steps to connect local LLMs to Claude Code, as explained on **Tech千一夜**.
 
-## 📺 関連動画
-
-[![関連動画](https://img.youtube.com/vi/q1Xtrr_Crrc/maxresdefault.jpg)](https://www.youtube.com/watch?v=q1Xtrr_Crrc)
+<p align="center"><a href="https://www.youtube.com/channel/UCASQiIkKCsZmaJHc4SDxyVg"><img src="./images/channel_icon.png" width="120" alt="Tech千一夜 YouTube Channel"></a></p>
 
 ---
 
-## 🎯 このリポジトリでできること
+## Related Video
 
-- **Apple Silicon Mac** で llama.cpp を使いローカルLLMを動かす
-- **Claude Code** のバックエンドをローカルLLMに切り替える
-- 下記モデルで動作確認済み（スクリプトから選択可能）
-
-| モデル | タイプ | サイズ (Q4) | 推奨メモリ | 特徴 |
-|--------|--------|------------|-----------|------|
-| **Qwen3.5-35B-A3B** | MoE | ~22GB | 24GB〜 | 軽量で高速。コーディング性能◎ |
-| **Qwen3.5-27B** | Dense | ~18GB | 24GB〜 | Dense で高精度。汎用向き |
-| **Qwen3.5-122B-A10B** | MoE | ~77GB | 96GB〜 | 大規模・高精度。大メモリ環境向け |
-| **GLM-4.7-Flash** | Dense | ~10GB | 16GB〜 | 最軽量。メモリが少ない環境向け |
+[![Related Video](https://img.youtube.com/vi/q1Xtrr_Crrc/maxresdefault.jpg)](https://www.youtube.com/watch?v=q1Xtrr_Crrc)
 
 ---
 
-## 🚀 クイックスタート（スクリプト実行）
+## Background
+
+This tool is a small utility born from the development of **IXV**, an AI development ecosystem designed for Japanese engineering teams.
+
+IXV delivers a methodology and OSS that put AI to practical use in real development workflows. This repository publishes a portion of that work.
+
+---
+
+## Use Cases
+
+- **Cost reduction**: Run Claude Code with a local LLM without API costs
+- **Offline development**: Use Claude Code without an internet connection
+- **Privacy**: Avoid sending code to the cloud
+- **Experimentation / learning**: Try out combinations of local LLMs with Claude Code
+
+---
+
+## Features
+
+- Run a local LLM on an **Apple Silicon Mac** using llama.cpp
+- Switch the Claude Code backend to a local LLM
+- Confirmed working with the following models (selectable from the script)
+
+| Model | Type | Size (Q4) | Recommended Memory | Notes |
+|-------|------|-----------|-------------------|-------|
+| **Qwen3.5-35B-A3B** | MoE | ~22 GB | 24 GB+ | Lightweight and fast. Great coding performance |
+| **Qwen3.5-27B** | Dense | ~18 GB | 24 GB+ | Dense, high accuracy. General purpose |
+| **Qwen3.5-122B-A10B** | MoE | ~77 GB | 96 GB+ | Large-scale, high accuracy. For high-memory environments |
+| **GLM-4.7-Flash** | Dense | ~10 GB | 16 GB+ | Lightest option. For lower-memory environments |
+
+---
+
+## Setup
+
+### Prerequisites
+
+- Apple Silicon Mac (M1–M4)
+- 16 GB or more of memory (24 GB+ recommended for Qwen3.5 models)
+- macOS 13 (Ventura) or later recommended
+- Internet connection (for initial setup)
+
+### Quick Start
 
 ```bash
 git clone https://github.com/elvezjp/claude-code-local-setup.git
 cd claude-code-local-setup
 
-# 1コマンドで起動（実行後にモデル選択）
-# 未準備なら Homebrew/Python/Claude Code/llama.cpp/モデル を自動セットアップ
+# Launch with a single command (model selection after execution)
+# Automatically sets up Homebrew/Python/Claude Code/llama.cpp/model if not ready
 ./scripts/run-local-llm.sh
 ```
 
-※ 従来どおり `./scripts/run-local-llm.sh qwen` / `qwen27b` / `qwen122b` / `glm` の直接指定も可能です。
+You can also specify a model directly: `./scripts/run-local-llm.sh qwen` / `qwen27b` / `qwen122b` / `glm`.
 
-モデルダウンロード中は、ターミナルに進捗バー（% / 速度 / 残り時間）が表示されます。
+A progress bar (% / speed / remaining time) is shown during model download.
 
-このスクリプトは、未準備時に以下を自動セットアップします。
+The script automatically sets up the following if not already installed:
 
-- Homebrew（未導入時）
-- Python 3 / pip（未導入時）
-- Claude Code（未導入時）
-- llama.cpp のビルド
-- 選択モデル（GGUF）のダウンロード
+- Homebrew
+- Python 3 / pip
+- Claude Code
+- llama.cpp build
+- Selected model (GGUF) download
 
-ローカルLLM起動後、別ターミナルで Claude Code を使う場合:
+---
+
+## Usage
+
+After launching the local LLM, use Claude Code in a separate terminal:
 
 ```bash
 export ANTHROPIC_BASE_URL="http://localhost:8001"
 export ANTHROPIC_API_KEY="sk-no-key-required"
 
-# 例: Qwen を使う場合
+# Example: using Qwen
 claude --model unsloth/Qwen3.5-35B-A3B
 ```
 
-環境の状態を確認:
+Check environment status:
 
 ```bash
 ./scripts/run-local-llm.sh status
 ```
 
-ポートを変更したい場合:
+Change the port:
 
 ```bash
 LOCAL_LLM_PORT=8002 ./scripts/run-local-llm.sh qwen
 ```
 
-セットアップ・起動のログは `logs/` ディレクトリに自動保存されます。トラブル時の共有に便利です。
+Setup and launch logs are automatically saved to the `logs/` directory, useful for sharing when troubleshooting.
 
-> セキュリティ注記: Homebrew / Claude Code の導入には、各公式が案内する `curl | bash` 形式のインストール手順を利用しています。実行前に内容確認したい場合は、URLをブラウザで開いてスクリプト内容を確認してから実行してください。
-
----
-
-## 📖 詳細手順
-
-ステップごとの詳細は [`docs/setup-guide.md`](docs/setup-guide.md) を参照してください。
+> Security note: Homebrew / Claude Code installation uses `curl | bash`-style scripts as guided by their official sources. If you want to review the content before executing, open the URL in a browser to check the script.
 
 ---
 
-## 📁 ファイル構成
+## Detailed Steps
+
+For step-by-step details, see [`docs/setup-guide.md`](docs/setup-guide.md).
+
+---
+
+## Directory Structure
 
 ```
 .
-├── README.md
+├── README.md                # English README
+├── README_ja.md             # Japanese README
+├── CHANGELOG.md             # English changelog
+├── CHANGELOG_ja.md          # Japanese changelog
+├── CONTRIBUTING.md          # English contributing guide
+├── CONTRIBUTING_ja.md       # Japanese contributing guide
+├── SECURITY.md              # English security policy
+├── SECURITY_ja.md           # Japanese security policy
 ├── LICENSE                  # MIT License
-├── .gitignore               # llama.cpp/ unsloth/ 等を除外
+├── .gitignore               # Excludes llama.cpp/, unsloth/, etc.
 ├── docs/
-│   └── setup-guide.md       # 詳細セットアップ手順
+│   └── setup-guide.md       # Detailed setup steps
 └── scripts/
-    └── run-local-llm.sh     # 単一エントリーポイント（セットアップ〜起動まで）
+    └── run-local-llm.sh     # Single entrypoint (setup through launch)
 ```
 
 ---
 
-## 動作確認環境
+## Tested Environment
 
-| 項目 | 内容 |
-|------|------|
-| デバイス | Apple Silicon Mac（M1〜M4） |
-| メモリ | 24GB以上推奨 |
-| llama.cpp | 2025年3月時点の最新版 |
-| Claude Code | 最新版推奨 |
-
----
-
-## ⚠️ 注意事項
-
-- Claude Code は頻繁にアップデートされます。手順が古くなった場合は Issue でお知らせください。
-- `--dangerously-skip-permissions` オプションは、Claude Code がすべての操作を無確認で実行します。使用には注意してください。
+| Item | Details |
+|------|---------|
+| Device | Apple Silicon Mac (M1–M4) |
+| Memory | 24 GB or more recommended |
+| llama.cpp | Latest as of March 2025 |
+| Claude Code | Latest recommended |
 
 ---
 
-## 📄 ライセンス
+## Documentation
 
-MIT License — 詳細は [LICENSE](LICENSE) を参照してください。
-
----
-
-## 🤝 コントリビューション
-
-バグ報告・改善提案は [Issues](https://github.com/elvezjp/claude-code-local-setup/issues) へ。
-貢献方法の詳細は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
-
-セキュリティ上の問題は [SECURITY.md](SECURITY.md) の手順でご報告ください。
+- [CHANGELOG.md](CHANGELOG.md) / [CHANGELOG_ja.md](CHANGELOG_ja.md) — Version history
+- [CONTRIBUTING.md](CONTRIBUTING.md) / [CONTRIBUTING_ja.md](CONTRIBUTING_ja.md) — How to contribute
+- [SECURITY.md](SECURITY.md) / [SECURITY_ja.md](SECURITY_ja.md) — Security policy
+- [docs/setup-guide.md](docs/setup-guide.md) — Detailed setup steps
 
 ---
 
-## 🙏 参考
+## Security
 
-- [Unsloth 公式ドキュメント](https://unsloth.ai/docs/basics/claude-code)
+For security details, see [SECURITY.md](SECURITY.md).
+
+- Use `--dangerously-skip-permissions` only in trusted environments
+- Do not mistakenly use the dummy API key for local LLMs when connecting to the official API
+- Download model files only from official sources (the unsloth repository on Hugging Face)
+
+---
+
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+- Bug reports: [GitHub Issues](https://github.com/elvezjp/claude-code-local-setup/issues)
+- Feature proposals: [GitHub Issues](https://github.com/elvezjp/claude-code-local-setup/issues)
+- Pull requests: [GitHub Pull Requests](https://github.com/elvezjp/claude-code-local-setup/pulls)
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for details.
+
+---
+
+## License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+## Contact
+
+- **Email**: info@elvez.co.jp
+- **Organization**: Elvez Inc.
+
+For bug reports and questions, post to [Issues](https://github.com/elvezjp/claude-code-local-setup/issues).
+
+---
+
+## References
+
+- [Unsloth Official Documentation](https://unsloth.ai/docs/basics/claude-code)
 - [llama.cpp](https://github.com/ggml-org/llama.cpp)
 - [Claude Code](https://claude.ai/code)
