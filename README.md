@@ -1,4 +1,4 @@
-# claude-code-local-setup
+# Claude Code × Local LLM Setup Guide (for Mac)
 
 [English](./README.md) | [日本語](./README_ja.md)
 
