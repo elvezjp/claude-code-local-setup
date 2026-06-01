@@ -7,7 +7,7 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づき、
 バージョン管理は [セマンティックバージョニング](https://semver.org/lang/ja/) に準拠しています。
 
-## [Unreleased]
+## [v1.0.1] - 2026-06-01
 
 ### 追加
 - READMEに関連動画リンクを追加
