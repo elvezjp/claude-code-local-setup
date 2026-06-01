@@ -99,6 +99,23 @@ fix
 update
 ```
 
+## Release Procedure
+
+### When to Bump the Version
+
+Bump the version when the repository has meaningful changes, such as new features, bug fixes, or major documentation additions or updates.
+Do not bump the version for dependency updates only, such as security patches from Dependabot.
+In that case, record the change under `[Unreleased]` and include it together with the next release that contains meaningful changes.
+
+### How to Create a Tag
+
+After the version update commit has been merged into `main`, create a tag on that commit and push it to the remote repository.
+
+```bash
+git tag -a v1.0.0 -m "Release v1.0.0"
+git push origin v1.0.0
+```
+
 ## License
 
 Contributions to this repository are published under the [MIT License](LICENSE).
