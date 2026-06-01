@@ -1,71 +1,111 @@
+[English](./CONTRIBUTING.md) | [日本語](./CONTRIBUTING_ja.md)
+
 # Contributing Guide
 
-本リポジトリへの貢献を歓迎します。
+Contributions to this repository are welcome.
 
-## 貢献の種類
+## Types of Contributions
 
-- バグ報告・動作確認環境の追記
-- ドキュメントの誤記修正・改善
-- スクリプトの不具合修正
-- 新しいモデル対応の追加
+- Bug reports and additional environment verification
+- Documentation corrections and improvements
+- Script bug fixes
+- Adding support for new models
 
-## 環境のセットアップ
+## Environment Setup
+
+### Prerequisites
+
+- Apple Silicon Mac (M1–M4)
+- 16 GB or more of memory
+- macOS 13 (Ventura) or later recommended
+
+### Setup Steps
 
 ```bash
 git clone https://github.com/elvezjp/claude-code-local-setup.git
 cd claude-code-local-setup
 ```
 
-依存ツールのインストールは不要です。`scripts/run-local-llm.sh` 自体がセットアップを行います。
+No additional dependency installation is required. `scripts/run-local-llm.sh` handles setup automatically.
 
-動作確認には Apple Silicon Mac（M1〜M4）と 16GB 以上のメモリが必要です。
+## Testing
 
-## テスト
-
-自動テストはありません。変更後は以下を手動で確認してください。
+There are no automated tests. After making changes, please verify manually:
 
 ```bash
-# スクリプトの動作確認（モデル選択画面が表示されれば OK）
+# Verify script operation (OK if model selection screen appears)
 ./scripts/run-local-llm.sh
 
-# 環境状態の確認
+# Check environment status
 ./scripts/run-local-llm.sh status
 ```
 
-スクリプトを変更した場合は、影響する選択肢（モデル選択・自動セットアップ・ポート変更など）を一通り確認してください。
+If you modify the script, check all affected paths (model selection, auto-setup, port configuration, etc.).
 
-## Issue の報告
+## Reporting Issues
 
-バグ報告や提案は [Issues](https://github.com/elvezjp/claude-code-local-setup/issues) に投稿してください。
+Submit bug reports and proposals to [Issues](https://github.com/elvezjp/claude-code-local-setup/issues).
 
-報告の際は以下を含めると対応しやすくなります。
+Include the following when reporting a bug:
 
-- macOS バージョン・チップ型番（例: M2 Pro）
-- 実行したコマンドと出力結果
-- `logs/` ディレクトリのログファイル（存在する場合）
+- A clear, descriptive title
+- Steps to reproduce the problem
+- Expected behavior and actual behavior
+- macOS version and chip model (e.g., M2 Pro)
+- Command executed and its output
+- Log file from the `logs/` directory (if it exists)
 
-セキュリティ上の問題は Issue ではなく [SECURITY.md](SECURITY.md) の手順で報告してください。
+For feature proposals, include:
 
-## Pull Request の手順
+- A detailed description of the proposed feature
+- Use cases and benefits
 
-1. このリポジトリを Fork する
-2. 変更用のブランチを作成する（例: `fix/model-download-error`）
-3. 変更を加えて動作確認する
-4. Pull Request を作成する
+For security issues, please follow the procedure in [SECURITY.md](SECURITY.md) rather than opening a public Issue.
 
-PR の説明には「何を・なぜ変更したか」と「確認した動作」を記載してください。
+## Pull Request Procedure
 
-## コミットメッセージの規則
+1. Fork this repository
+2. Create a branch for your changes (branch naming: `{username}/{YYYYMMDD}-{description}`)
+3. Make your changes and verify they work
+4. Create a Pull Request
 
-特定の規約は設けていませんが、変更内容が分かる簡潔なメッセージを書いてください。
+In the PR description, include "what and why you changed" and "the behavior you confirmed".
+
+## Coding Guidelines
+
+Scripts in this repository are written in Bash.
+
+- Use 2-space indentation
+- Use snake_case for variable names (e.g., `model_name`)
+- Use snake_case for function names
+- Use `bash -n` for shell script syntax checks
+
+```bash
+bash -n scripts/run-local-llm.sh
+```
+
+## Commit Message Rules
+
+There is no strict convention, but please write concise messages that clearly describe the change.
 
 ```
-# 例
-fix: Qwen3.5-27B ダウンロード時のパスエラーを修正
-docs: setup-guide.md にトラブルシューティング項目を追加
-feat: Llama 3.3 70B サポートを追加
+# Good examples
+fix: Fix path error when downloading Qwen3.5-27B
+docs: Add troubleshooting section to setup-guide.md
+feat: Add Llama 3.3 70B support
+
+# Avoid
+fix
+update
 ```
 
-## ライセンス
+## License
 
-本リポジトリへの貢献は [MIT License](LICENSE) のもとで公開されます。
+Contributions to this repository are published under the [MIT License](LICENSE).
+
+## Contact
+
+For questions or consultations, post to [Issues](https://github.com/elvezjp/claude-code-local-setup/issues) or contact us at:
+
+- **Email**: info@elvez.co.jp
+- **Organization**: Elvez Inc.
