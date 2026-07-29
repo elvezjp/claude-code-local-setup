@@ -12,6 +12,11 @@ cd "${REPO_ROOT}"
 LLAMA_REPO_DIR="${REPO_ROOT}/llama.cpp"
 LLAMA_SERVER_BIN="${LLAMA_REPO_DIR}/llama-server"
 PORT="${LOCAL_LLM_PORT:-8001}"
+# PORT は AppleScript のコマンド文字列に埋め込まれるため、数値以外を弾く。
+if ! [[ "${PORT}" =~ ^[0-9]+$ ]] || [ "${PORT}" -lt 1 ] || [ "${PORT}" -gt 65535 ]; then
+    echo "❌ LOCAL_LLM_PORT にはポート番号（1-65535）を指定してください: ${PORT}"
+    exit 1
+fi
 LOG_DIR="${REPO_ROOT}/logs"
 
 # =============================================================
@@ -555,13 +560,18 @@ echo "  ✅ サーバー起動完了"
 # Claude Code を別ウィンドウで自動起動
 CLAUDE_CMD="cd \"${REPO_ROOT}\"; export ANTHROPIC_BASE_URL='http://localhost:${PORT}'; export ANTHROPIC_API_KEY='sk-no-key-required'; claude --model ${MODEL_ALIAS}"
 
+# CLAUDE_CMD は AppleScript の文字列リテラルに埋め込まれる。
+# リポジトリのパス（REPO_ROOT）に " や \ が含まれるとリテラルから抜け出し、
+# osascript に任意のコマンドを渡せてしまうためエスケープする。
+CLAUDE_CMD_ESCAPED="$(printf '%s' "${CLAUDE_CMD}" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"
+
 if [ "${TERM_PROGRAM}" = "iTerm.app" ]; then
     # iTerm2
     osascript <<APPLESCRIPT
 tell application "iTerm2"
     create window with default profile
     tell current session of current window
-        write text "${CLAUDE_CMD}"
+        write text "${CLAUDE_CMD_ESCAPED}"
     end tell
 end tell
 APPLESCRIPT
@@ -569,7 +579,7 @@ else
     # Terminal.app（デフォルト）
     osascript <<APPLESCRIPT
 tell application "Terminal"
-    do script "${CLAUDE_CMD}"
+    do script "${CLAUDE_CMD_ESCAPED}"
     activate
 end tell
 APPLESCRIPT
