@@ -7,7 +7,16 @@ All notable changes to this project will be recorded in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.0.1] - 2026-06-01
+## [1.0.2] - 2026-08-09
+
+### Security
+- `scripts/run-local-llm.sh`: escape the command string used to launch Claude Code in a separate window for both the shell and AppleScript layers, fixing a case where a repository path containing `"` or `$()` could execute unintended commands
+- `scripts/run-local-llm.sh`: validate that `LOCAL_LLM_PORT` is a port number (1-65535) at startup
+
+### Changed
+- Document the valid range of `LOCAL_LLM_PORT` in the README
+
+## [1.0.1] - 2026-06-01
 
 ### Added
 - Related video link added to README
