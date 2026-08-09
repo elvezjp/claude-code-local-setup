@@ -7,7 +7,16 @@
 フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づき、
 バージョン管理は [セマンティックバージョニング](https://semver.org/lang/ja/) に準拠しています。
 
-## [v1.0.1] - 2026-06-01
+## [1.0.2] - 2026-08-09
+
+### セキュリティ
+- `scripts/run-local-llm.sh`: Claude Code を別ウィンドウで起動する際のコマンド文字列を、シェル用・AppleScript 用の両方でエスケープするよう修正。リポジトリのパスに `"` や `$()` が含まれる場合に、意図しないコマンドが実行されうる問題を解消
+- `scripts/run-local-llm.sh`: `LOCAL_LLM_PORT` がポート番号（1-65535）であることを起動時に検証
+
+### 変更
+- README に `LOCAL_LLM_PORT` の指定可能な範囲を明記
+
+## [1.0.1] - 2026-06-01
 
 ### 追加
 - READMEに関連動画リンクを追加

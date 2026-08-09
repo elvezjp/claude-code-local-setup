@@ -109,6 +109,8 @@ Change the port:
 LOCAL_LLM_PORT=8002 ./scripts/run-local-llm.sh qwen
 ```
 
+`LOCAL_LLM_PORT` accepts only a port number (1-65535). Out-of-range or non-numeric values cause an error at startup.
+
 Setup and launch logs are automatically saved to the `logs/` directory, useful for sharing when troubleshooting.
 
 > Security note: Homebrew / Claude Code installation uses `curl | bash`-style scripts as guided by their official sources. If you want to review the content before executing, open the URL in a browser to check the script.

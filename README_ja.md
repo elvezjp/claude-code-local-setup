@@ -109,6 +109,8 @@ claude --model unsloth/Qwen3.5-35B-A3B
 LOCAL_LLM_PORT=8002 ./scripts/run-local-llm.sh qwen
 ```
 
+`LOCAL_LLM_PORT` にはポート番号（1-65535）のみ指定できます。範囲外の値や数値以外を指定した場合は起動時にエラーになります。
+
 セットアップ・起動のログは `logs/` ディレクトリに自動保存されます。トラブル時の共有に便利です。
 
 > セキュリティ注記: Homebrew / Claude Code の導入には、各公式が案内する `curl | bash` 形式のインストール手順を利用しています。実行前に内容確認したい場合は、URLをブラウザで開いてスクリプト内容を確認してから実行してください。

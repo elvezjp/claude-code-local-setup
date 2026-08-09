@@ -558,11 +558,15 @@ done
 echo "  ✅ サーバー起動完了"
 
 # Claude Code を別ウィンドウで自動起動
-CLAUDE_CMD="cd \"${REPO_ROOT}\"; export ANTHROPIC_BASE_URL='http://localhost:${PORT}'; export ANTHROPIC_API_KEY='sk-no-key-required'; claude --model ${MODEL_ALIAS}"
+# CLAUDE_CMD は最終的に別ウィンドウのシェルが解釈する。REPO_ROOT をダブルクォートで
+# 囲むだけでは $() などのコマンド置換が起動先シェルで実行されてしまうため、
+# シングルクォートで囲んでリテラル化する（値に含まれる ' は '\'' に置換）。
+REPO_ROOT_QUOTED="'$(printf '%s' "${REPO_ROOT}" | sed "s/'/'\\\\''/g")'"
+CLAUDE_CMD="cd ${REPO_ROOT_QUOTED}; export ANTHROPIC_BASE_URL='http://localhost:${PORT}'; export ANTHROPIC_API_KEY='sk-no-key-required'; claude --model ${MODEL_ALIAS}"
 
-# CLAUDE_CMD は AppleScript の文字列リテラルに埋め込まれる。
-# リポジトリのパス（REPO_ROOT）に " や \ が含まれるとリテラルから抜け出し、
-# osascript に任意のコマンドを渡せてしまうためエスケープする。
+# さらに CLAUDE_CMD は AppleScript の文字列リテラルにも埋め込まれる。
+# " や \ が含まれるとリテラルから抜け出し、osascript に任意のコマンドを
+# 渡せてしまうためエスケープする。
 CLAUDE_CMD_ESCAPED="$(printf '%s' "${CLAUDE_CMD}" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g')"
 
 if [ "${TERM_PROGRAM}" = "iTerm.app" ]; then
